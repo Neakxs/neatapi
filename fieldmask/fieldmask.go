@@ -31,13 +31,7 @@ func NewFieldMask(paths ...string) FieldMask {
 func (m *fieldMask) populateResourceMap(r resource.Resource) error {
 	if m.mapping == nil {
 		m.mapping = make(map[string]*internal.MapEntry)
-		var err error
-		if iface, ok := r.(Maskabler); ok {
-			err = internal.PopulateResourceMap(r, m.mapping, iface.Maskable)
-		} else {
-			err = internal.PopulateResourceMap(r, m.mapping, func(f resource.Field) bool { return true })
-		}
-		if err != nil {
+		if err := internal.PopulateResourceMap(r, m.mapping); err != nil {
 			return err
 		}
 	}
@@ -48,11 +42,10 @@ func (m *fieldMask) Validate(r resource.Resource) error {
 	if err := m.populateResourceMap(r); err != nil {
 		return err
 	}
-	fmt.Println(m.mapping)
 	if iface, ok := r.(Maskabler); ok {
 		for k, v := range m.mapping {
 			if !iface.Maskable(v) {
-				return fmt.Errorf("%v: not allowed", k)
+				return fmt.Errorf("%v: not maskable", k)
 			}
 		}
 	}
@@ -63,7 +56,6 @@ func (m *fieldMask) Validate(r resource.Resource) error {
 			}
 		}
 	}
-
 	return nil
 }
 
